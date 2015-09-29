@@ -1,0 +1,58 @@
+<!-- <!DOCTYPE html> -->
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>バーチャルサバゲ - MASTER</title>
+    <style>
+        @charset "utf-8";
+        #map {
+            height: 400px;
+        }
+    </style>
+    <script src="https://maps.google.com/maps/api/js?sensor=true"></script>
+    <script src="./gmaps.js"></script>
+    <script src='https://cdn.mlkcca.com/v2.0.0/milkcocoa.js'></script>
+    <script>
+        var dataStore = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('chat');
+ 
+        window.onload = function(){
+ 
+            var lat = 35.710285;
+            var lng = 139.77714;
+            var map = new GMaps({
+                div: "#map",
+                lat: lat,
+                lng: lng,
+                zoom: 17
+            });
+ 
+            dataStore.on('send', function(data) {
+                var lat = data.value.lat, lng = data.value.lon;
+ 
+                var img = '';
+                if(data.value.type == 'ryo'){
+                    img = 'https://i.gyazo.com/7502afdcf0bbcc1f6d8f3d85e66616f6.png';
+                }else if(data.value.type == 'maro'){
+                    img = 'https://i.gyazo.com/f7b2e1dac073595c3e53a260413aec14.png';
+                }
+ 
+                map.setCenter(lat, lng);
+                map.addMarker({
+                    lat: lat,
+                    lng: lng,
+                    title: "LIG社員",
+                    icon: img,
+                    infoWindow: {
+                        content: "<p>LIG社員は<br/>ココだよ!</p>"
+                    }
+                });
+                console.log('recieve',data.value);
+            });
+ 
+        };
+    </script>
+</head>
+<body>
+<div id="map"></div>
+</body>
+</html>

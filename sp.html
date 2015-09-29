@@ -1,0 +1,546 @@
+<!-- <!DOCTYPE html> -->
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,user-scalable=no,maximum-scale=1" />
+    <title>バーチャルサバゲ</title>
+    <style>
+    @charset "utf-8";
+    body {
+        background: url('./image/bg.jpg') bottom no-repeat;
+        background-size: cover;
+        color: #FFFFFF;
+        padding: 5px 15px 0;
+    }
+    p {
+        color: #FFFFFF;
+    }
+    #map {
+        max-width: 100%;
+        height: 400px;
+        margin-bottom: 5px;
+    }
+    #msg {
+        font-weight:bold;
+        color: red;
+        font-size:16px;
+    }
+
+    </style>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="https://maps.google.com/maps/api/js?sensor=true&libraries=geometry"></script>
+    <!--<script src="http://maps.googleapis.com/maps/api/js?v=3.6&sensor=false&libraries=geometry"></script>-->
+    <script src="./gmaps.js"></script>
+    <script src='https://cdn.mlkcca.com/v2.0.0/milkcocoa.js'></script>
+    <script>
+    // var dataStore = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('sabage');
+    var dsTeam01 = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage/myteam');
+    var dsTeam02 = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage/otteam');
+    var dsItems = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage/items');
+    var dsSabage = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage');
+    // send用
+    var chat = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('chat');
+
+    var tmpDsMyteamId;
+    var itemsData = [];
+
+    var dsMyteam;
+    var dsOtteam;
+
+    var item01LatLng;
+    var item02LatLng;
+    var item03LatLng;
+
+    var status = '0';
+    var my_del_flg = 0;
+
+    var type = '';
+    var user = '';
+    var myid = '';
+
+    function goku(){ 
+        type = '1';
+        user = 'goku';
+        dsMyteam = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage/myteam');
+        dsOtteam = new MilkCocoa("hotidtkhkd3.mlkcca.com").dataStore('vsabage/otteam');
+        alert("孫チームの悟空としてjoinします");
+        document.getElementById("your_chara").textContent='あなたは悟空です';
+        echoMsg('悟空としてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+    function vegeta(){
+        type = '1';
+        user = 'vegeta';
+        dsMyteam = dsTeam01;
+        dsOtteam = dsTeam02;
+        alert("孫チームのベジータとしてjoinします");
+        document.getElementById("your_chara").textContent='あなたはベジータです';
+        echoMsg('ベジータとしてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+    function buruma(){
+        type = '1';
+        user = 'buruma';
+        dsMyteam = dsTeam01;
+        dsOtteam = dsTeam02;
+        alert("孫チームのブルマとしてjoinします");
+        document.getElementById("your_chara").textContent='あなたはブルマです';
+        echoMsg('ブルマとしてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+    function freza(){
+        type = '2';
+        user = 'freza';
+        dsMyteam = dsTeam02;
+        dsOtteam = dsTeam01;
+        alert("フリーザチームのフリーザとしてjoinします");
+        document.getElementById("your_chara").textContent='あなたはフリーザです';
+        echoMsg('フリーザとしてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+    function zabon(){
+        type = '2';
+        user = 'zabon';
+        dsMyteam = dsTeam02;
+        dsOtteam = dsTeam01;
+        alert("フリーザチームのザーボンとしてjoinします");
+        document.getElementById("your_chara").textContent='あなたはザーボンです';
+        echoMsg('ザーボンとしてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+    function dodoria(){
+        type = '2';
+        user = 'dodoria';
+        dsMyteam = dsTeam02;
+        dsOtteam = dsTeam01;
+        alert("フリーザチームのドドリアとしてjoinします");
+        document.getElementById("your_chara").textContent='あなたはドドリアです';
+        echoMsg('ドドリアとしてjoinしました');
+        document.getElementById('select_chara').style.display = "none";
+    }
+
+    function start() {
+        if (user == '' || type == '') {
+            alert("キャラクターを選択してください");
+            return;
+        }
+        GMaps.geolocate({
+            success: function(position) {
+                // アイテム設置
+                // TODO: 時間があれば乱数使って位置を変動させる
+                var lat01 = position.coords.latitude- 0.0002215;
+                var lon01 = position.coords.longitude-0.0001242;
+                var lat02 = position.coords.latitude+ 0.0024242;
+                var lon02 = position.coords.longitude+0.0014242;
+                var lat03 = position.coords.latitude-0.0004242;
+                var lon03 = position.coords.longitude+0.0024242;
+
+                // TODO: 配列にまとめてfor文でまとめる
+                var itemslatlon = [
+
+                ];
+
+                item01LatLng = new google.maps.LatLng(lat01, lon01);
+                item02LatLng = new google.maps.LatLng(lat02, lon02);
+                item03LatLng = new google.maps.LatLng(lat03, lon03);
+
+                dsItems.push({
+                    // lat : position.coords.latitude-0.0015015,
+                    // lon : position.coords.longitude-0.0024242,
+                    lat : position.coords.latitude- 0.0002215,
+                    lon : position.coords.longitude-0.0001242,
+                    type: '3',
+                    user: 'item01',
+                    latlon: item01LatLng
+                });
+                dsItems.push({
+                    lat : position.coords.latitude+0.0024242,
+                    lon : position.coords.longitude+0.0014242,
+                    type: '3',
+                    user: 'item02',
+                    latlon: item02LatLng
+                });
+                dsItems.push({
+                    lat : position.coords.latitude-0.0004242,
+                    lon : position.coords.longitude+0.0024242,
+                    type: '3',
+                    user: 'item03',
+                    latlon: item03LatLng
+                });
+            },
+            error: function(error) { console.log('Geolocation failed: '+error.message);},
+            not_supported: function() {console.log('Your browser does not support geolocation');},
+            always: function() {console.log('done');}
+        });
+        echoMsg('ゲームSTARTしました！');
+        // 画面を切り替え .. これって全ユーザに伝わる? -> maybe yes
+    }
+
+    function giveup() {
+        confirm('本当にGIVE UPしますか？');
+        var count = 0;
+        dsItems.stream().size(5).next(function(err, datas) {
+            console.log(count);
+            datas.forEach(function(value) {
+                dsItems.remove(value.id, function(err, removed){
+                    //サーバでの削除操作が完了
+                    console.log(removed);
+                }, function(err) {
+                    //"Permission denied" or "limit exceeded"
+                    console.log(err);
+                });
+                count++;
+                console.log(count);
+            });
+            console.log('finish delete dsItems');
+        });
+        dsMyteam.stream().size(5).next(function(err, datas) {
+            console.log(count);
+            datas.forEach(function(value) {
+                dsMyteam.remove(value.id);
+                count++;
+                console.log(count);
+            });
+            console.log('finish delete myTeam');
+        });
+        dsOtteam.stream().size(5).next(function(err, datas) {
+            console.log(count);
+            datas.forEach(function(value) {
+                dsOtteam.remove(value.id);
+                count++;
+                console.log(count);
+            });
+        });
+        status = 0;
+        echoMsg('ギブアップしました');
+        var type = '';
+        var user = '';
+        var myid = '';
+    }
+
+    window.onload = function(){
+        // 最初の読み込み
+        var map = '';
+        GMaps.geolocate({
+            success: function(position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                map = new GMaps({
+                    div: "#map",
+                    lat: lat,
+                    lng: lng,
+                    zoom: 17
+                });
+            },
+            error: function(error) { console.log('Geolocation failed: '+error.message);},
+            not_supported: function() {console.log('Your browser does not support geolocation');},
+            always: function() {console.log('done');}
+        });
+
+        // 5秒ごとに読み込み
+        setInterval(function(){
+            console.log('status is '+status);
+            if (status == 0) {
+                // itemの情報で、誰かがスタートを押したか判断
+                dsItems.stream().size(1).next(function(err, datas) {
+                    if(datas.length < 1) {
+                        reflg = true; // ゲームスタート前は処理しない
+                        return;
+                    }
+                    if (user == '' || type == '') {
+                        echoMsg('すでにゲームがスタートしています。終了するまでお待ち下さい');
+                        return;
+                    }
+                    // 自分の位置情報をPUSHする
+                    GMaps.geolocate({
+                        success: function(position) {
+                            var myLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                            dsMyteam.push({
+                                lat : position.coords.latitude,
+                                lon : position.coords.longitude,
+                                type: type,
+                                user: user,
+                                user: user,
+                                latlon: myLatLng
+                            },function(err, pushed){
+                                myid = pushed['id'];
+                                console.log('myid:' +myid);
+                            });
+                        },
+                        error: function(error) { console.log('Geolocation failed: '+error.message);},
+                        not_supported: function() {console.log('Your browser does not support geolocation');},
+                        always: function() {console.log('done');}
+                    });
+
+                    // Itemの情報をとってくる
+                    dsItems.stream().size(3).next(function(err, datas) {
+                        itemsData = datas;
+                    });
+
+                    status = 1;
+                    document.getElementById('start').style.display = "none";
+                });
+
+            } else if (status == 1) {
+
+                /**
+                * ゲームスタート後
+                */
+
+                // 自分の位置情報を更新
+                GMaps.geolocate({
+                    success: function(position) {
+                        var myLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                        dsMyteam.set(myid, {
+                            lat : position.coords.latitude,
+                            lon : position.coords.longitude,
+                            type: type,
+                            user: user,
+                            latlon: myLatLng
+                        });
+
+                        // itemの可視/不可視を判定
+                        itemsData.forEach(function(v) {
+                            var value = v.value;
+                            // すでにGETされたボールは判定しない
+                            if (value.gotten) {
+                                return;
+                            }
+                            var itemLatLng = new google.maps.LatLng(value.lat, value.lon);
+                            var distance = google.maps.geometry.spherical.computeDistanceBetween(itemLatLng, myLatLng);
+                            console.log('item01 distance:' +distance);
+                            if (distance < 200) {
+                                echoMsg('ドランゴンボールを発見した！');
+                                var img = './image/'+value.user+'.png';
+                                map.addMarker({
+                                    lat: value.lat,
+                                    lng: value.lon,
+                                    title: 'ドラゴンボール',
+                                    icon: img,
+                                    infoWindow: {
+                                        content: "<p>"+value.user+"は<br/>ココだよ!</p>"
+                                    }
+                                });
+                            }
+                            // 勝敗判定
+                            if (value.gotten == 1) {
+                                gotTeam01++;
+                            } else if (value.gotten == 2) {
+                                gotTeam02++;
+                            }
+                        });
+                        // if (gotTeam01 >= 2) {
+                        //     status = 3;
+                        // } else if (gotTeam02 >= 2) {
+                        //     status = 4;
+                        // }
+                    },
+                    error: function(error) { console.log('Geolocation failed: '+error.message);},
+                    not_supported: function() {console.log('Your browser does not support geolocation');},
+                    always: function() {console.log('done');}
+                });
+
+                // 過去のマーカーをいったん削除
+                map.removeMarkers;
+
+                // 仲間の位置を取得
+                dsMyteam.stream().sort('desc').next(function(err, datas) {
+                    var deadsMyTeam = 0;
+                    for(var i=0;i < datas.length;i++) {
+                        var lat = datas[i].value.lat, lng = datas[i].value.lon;
+                        console.log('user: '+datas[i].value.user);
+                        var img = './image/'+datas[i].value.user+'.png';
+                        console.log('img: '+img);
+                        if (datas[i].value.del_flg == 1) {
+                            deadsMyTeam ++;
+                            if (datas[i].id == myid) {
+                                echoMsg('攻撃を受けて倒されました。幽霊として見守りましょう。');                       
+                                map.addMarker({
+                                    lat: lat,
+                                    lng: lng,
+                                    title: datas[i].value.user,
+                                    icon: './image/ghost.png',
+                                    infoWindow: {
+                                        content: "<p>"+datas[i].value.user+"は死亡しました・・"
+                                    }
+                                });
+                                my_del_flg = 1;
+                                // コマンドを非表示にする
+                                var command = document.getElementById('command');
+                                command.style.display = "none";
+                                return;
+                            }　else {
+                                return; // 死んでる人のマーカーはかかない
+                            }
+                        }
+                        map.addMarker({
+                            lat: lat,
+                            lng: lng,
+                            title: datas[i].value.user,
+                            icon: img,
+                            infoWindow: {
+                                content: "<p>"+datas[i].value.user+"は<br/>ココだよ!</p>"
+                            }
+                        });
+                        if (deadsMyTeam == datas.length) {
+                            status = 3;
+                        }
+                    }
+                });
+            } else if (status == 2) {
+                
+            } else if (status == 3) {
+                if (type == 1) echoMsg('チーム孫の勝利！！');
+                else echoMsg('チームフリーザの勝利！！');
+            } else if (status == 4) {
+                if (type == 1) echoMsg('チーム孫は敗北した・・');
+                else echoMsg('チームフリーザは敗北した・・');
+            }
+        },5000);
+    };
+
+    // アイテムGET判定
+    function itemget() {
+        GMaps.geolocate({
+            success: function(position) {
+                var gotTeam01 = 0;
+                var gotTeam02 = 0;
+                var myLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                itemsData.forEach(function(v) {
+                    var value = v.value;
+                    var itemLatLng = new google.maps.LatLng(value.lat, value.lon);
+                    var distance = google.maps.geometry.spherical.computeDistanceBetween(itemLatLng, myLatLng);
+                    console.log('hit distance:' +distance);
+                    if (distance < 30) {
+                        echoMsg('ドラゴンボールをGETした！');
+                        dsItems.set(v.id, {gotten:type}, function(err, setted){
+                            console.log(setted);
+                        }, function(err) { console.log(err); });
+                        map.addMarker({
+                            lat: value.lat,
+                            lng: value.lon,
+                            title: '[GET済]ドラゴンボール',
+                            icon: './image/'+value.img+'.png',
+                            infoWindow: {
+                                content: "<p>[GET済]ドラゴンボール</p>"
+                            }
+                        });
+                        map.addMarker({
+                            lat: value.lat-0.0000040,
+                            lng: value.lon,
+                            title: user,
+                            icon: './image/'+user+'.png',
+                            infoWindow: {
+                                content: "<p>"+user+"が<br/>GET！</p>"
+                            }
+                        });
+                    } else {
+                        echoMsg('GET失敗・・！');
+                    }
+                });
+            },
+            error: function(error) { console.log('Geolocation failed: '+error.message);},
+            not_supported: function() {console.log('Your browser does not support geolocation');},
+            always: function() {console.log('done');}
+        });
+    }
+    // 攻撃判定
+    function attach() {
+        GMaps.geolocate({
+            success: function(position) {
+                var myLatLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                dsOtteam.stream().next(function(err, datas) {
+                    var count = 0;
+                    datas.forEach(function(v) {
+                        var value = v.value;
+                        var otLatLng = new google.maps.LatLng(value.lat, value.lon);
+                        var distance = google.maps.geometry.spherical.computeDistanceBetween(otLatLng, myLatLng);
+                        if (distance < 30) {
+                            dsOtteam.set(v.id, {del_flg : 1}, function(err, setted){
+                                console.log(setted);
+                                echoMsg(value.user+'を倒しました！！');
+                                // intervalに攻撃された側の挙動を記述
+                            }, function(err) {
+                                console.log(err);
+                            });
+                            count++;
+                        }
+                        console.log(count);
+                        // 勝敗判定
+                    });
+                    if (count == 0) {
+                        echoMsg('攻撃に失敗しました');
+                    }
+                    console.log('finish delete dsItems');
+                });
+            },
+            error: function(error) { console.log('Geolocation failed: '+error.message);},
+            not_supported: function() {console.log('Your browser does not support geolocation');},
+            always: function() {console.log('done');}
+        });
+    }
+    //汎用メソッド
+    function echoMsg(msg) {
+        document.getElementById("msg").textContent=msg;
+        // みんなに共有
+        chat.send({
+            'msg': msg,
+            'user': user 
+        });
+    }
+    chat.on('send', function(data) {
+        var msg = data.value.msg;
+        var element = document.createElement('p'); 
+        element.innerHTML = data.value.user+':'+msg;
+        var log = document.getElementById("log");
+        log.insertBefore(element, log.firstChild);
+    });
+    function echoLog(msg) {
+        // document.getElementById("msg").text=msg;
+    }
+    </script>
+</head>
+<body>
+<div id="screen">
+
+<p id="msg"></p>
+<div id="map" style=></div>
+<p id="your_chara">ここに選択されたキャラが表示されます</p>
+
+<div id="command"><!--style="display:none;"-->
+<div class="btn-group-lg" role="group" aria-label="コマンド">
+  <button type="button" class="btn btn-default btn-lg active" onClick="itemget()">アイテムGET</button>
+  <button type="button" class="btn btn-default btn-lg active" onClick="attach()">攻撃</button>
+  <button type="button" class="btn btn-default btn-lg active" onClick="giveup()">GIVE UP</button>
+</div>
+</div>
+
+<div id="select_chara">
+<p>チームとキャラクターを選択してください</p>
+<div class="btn-group-lg" role="group" aria-label="チーム孫">
+    <p>チーム孫：</p>
+    <button type="button" class="btn btn-default btn-lg active" onClick="goku()">悟空</button>
+    <button type="button" class="btn btn-default btn-lg active" onClick="vegeta()">ベジータ</button>
+    <button type="button" class="btn btn-default btn-lg active" onClick="buruma()">ブルマ</button>
+</div>
+<div class="btn-group-lg" role="group" aria-label="チームフリーザ">
+    <p>チームフリーザ：</p>
+    <button type="button" class="btn btn-default btn-lg active" onClick="freza()">フリーザ</button>
+    <button type="button" class="btn btn-default btn-lg active" onClick="zabon()">ザーボン</button>
+    <button type="button" class="btn btn-default btn-lg active" onClick="dodoria()">ドドリア</button>
+</div>
+</div>
+
+<div class="btn-group-lg" role="group" aria-label="スタート" style="margin-top:10px;">
+<button id="start" type="button" class="btn btn-default btn-lg active" onClick="start()">START!</button>
+</div>
+<div id="log"><p>ここにログが表示されます</p></div>
+
+</div>
+</body>
+</html>
